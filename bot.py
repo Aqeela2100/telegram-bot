@@ -1,13 +1,14 @@
 from flask import Flask, request
 from telegram import Update
 from telegram.ext import ApplicationBuilder, MessageHandler, filters, ContextTypes
+import asyncio
 import sqlite3
 
 TOKEN = "8116954770:AAHqJYnGLjoE-WFngrCQhRjHMDs-Z1zx1BE"
-SECRET = "mysecret12345"   # غيرها لو تحب
+SECRET = "mysecret12345"
 DB_PATH = "app.db"
 
-# ===== البحث في قاعدة البيانات =====
+# ================== DATABASE ==================
 def search_student(query):
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
@@ -16,7 +17,7 @@ def search_student(query):
         SELECT name, grade, paid, remaining, phone, branch, year, notes, status
         FROM students
         WHERE name LIKE ? OR phone LIKE ?
-    """, ('%' + query + '%', '%' + query + '%'))
+    """, (f"%{query}%", f"%{query}%"))
 
     result = cursor.fetchone()
     conn.close()
@@ -25,49 +26,52 @@ def search_student(query):
         return None
 
     name, grade, paid, remaining, phone, branch, year, notes, status = result
-    message = (
+    return (
         f"📌 *معلومات الطالب*\n"
         f"————————————\n"
         f"👤 الاسم: {name}\n"
         f"🏫 الصف: {grade}\n"
-        f"💰 المبلغ المدفوع: {paid}\n"
+        f"💰 المدفوع: {paid}\n"
         f"💸 المتبقي: {remaining}\n"
-        f"📞 رقم الموبايل: {phone}\n"
+        f"📞 الرقم: {phone}\n"
         f"📍 الفرع: {branch}\n"
-        f"📅 السنة الدراسية: {year}\n"
+        f"📅 السنة: {year}\n"
         f"📝 الملاحظات: {notes}\n"
         f"⚡ الحالة: {status}"
     )
-    return message
 
-# ===== رد البوت =====
+# ================== BOT HANDLER ==================
 async def reply(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.message:
+        return
+    
     query = update.message.text
-    student_data = search_student(query)
+    result = search_student(query)
 
-    if student_data:
-        await update.message.reply_text(student_data, parse_mode="Markdown")
+    if result:
+        await update.message.reply_text(result, parse_mode="Markdown")
     else:
         await update.message.reply_text("❌ لم يتم العثور على الطالب.")
 
-# ===== Telegram Bot Setup =====
+# Create Telegram Bot
 telegram_app = ApplicationBuilder().token(TOKEN).build()
 telegram_app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, reply))
 
-# ===== Flask Webhook =====
+# Create Flask App
 flask_app = Flask(__name__)
 
-@flask_app.route("/")
+@flask_app.get("/")
 def home():
-    return "Bot is running."
+    return "Bot is running!"
 
-@flask_app.route(f"/{SECRET}", methods=["POST"])
+@flask_app.post(f"/{SECRET}")
 async def webhook():
-    data = request.get_json()
+    data = request.get_json(force=True)
     update = Update.de_json(data, telegram_app.bot)
-    await telegram_app.update_queue.put(update)
+    await telegram_app.process_update(update)
     return "OK"
 
-# ===== تشغيل Flask فقط (Render) =====
+# ================== START ==================
 if __name__ == "__main__":
+    # تشغيل Flask فقط
     flask_app.run(host="0.0.0.0", port=10000)
