@@ -3,10 +3,10 @@ from telegram import Update
 from telegram.ext import ApplicationBuilder, MessageHandler, filters, ContextTypes
 import sqlite3
 import os
-import asyncio
+from asyncio import run_coroutine_threadsafe
 
 TOKEN = "7974041535:AAGhCBD1rlD6N9AW4faKOeRLtj0ROIj18Xw"
-SECRET = "mysecret12345"   # يمكنك تغييره
+SECRET = "mysecret12345"  # يمكنك تغييره
 DB_PATH = "app.db"
 
 # ================== DATABASE ==================
@@ -66,12 +66,11 @@ def home():
 def webhook():
     data = request.get_json(force=True)
     update = Update.de_json(data, telegram_app.bot)
-    # معالجة التحديث في الخلفية لتجنب مشاكل async مع Flask
-    asyncio.create_task(telegram_app.process_update(update))
+    # معالجة async بشكل صحيح على Flask
+    run_coroutine_threadsafe(telegram_app.process_update(update), telegram_app.bot.loop)
     return "OK"
 
 # ================== START ==================
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     flask_app.run(host="0.0.0.0", port=port)
-
