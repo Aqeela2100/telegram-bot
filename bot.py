@@ -63,10 +63,11 @@ def home():
     return "Bot is running!"
 
 @flask_app.post(f"/{SECRET}")
-async def webhook():
+def webhook():
     data = request.get_json(force=True)
     update = Update.de_json(data, telegram_app.bot)
-    await telegram_app.process_update(update)
+    # معالجة التحديث في الخلفية لتجنب مشاكل async مع Flask
+    asyncio.create_task(telegram_app.process_update(update))
     return "OK"
 
 # ================== START ==================
