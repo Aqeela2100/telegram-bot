@@ -10,7 +10,7 @@ SECRET = "mysecret12345"   # يمكنك تغييره
 DB_PATH = "app.db"
 
 # ================== DATABASE ==================
-def search_student(query):
+def search_students(query):
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute("""
@@ -18,13 +18,12 @@ def search_student(query):
         FROM students
         WHERE name LIKE ? OR phone LIKE ?
     """, ('%' + query + '%', '%' + query + '%'))
-    result = cursor.fetchone()
+    results = cursor.fetchall()
     conn.close()
+    return results
 
-    if not result:
-        return None
-
-    name, grade, paid, remaining, phone, branch, year, notes, status = result
+def format_student_message(student):
+    name, grade, paid, remaining, phone, branch, year, notes, status = student
     return (
         f"📌 *معلومات الطالب*\n"
         f"————————————\n"
@@ -43,10 +42,12 @@ def search_student(query):
 async def reply(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message:
         return
-    query = update.message.text
-    result = search_student(query)
-    if result:
-        await update.message.reply_text(result, parse_mode="Markdown")
+    query = update.message.text.strip()
+    students = search_students(query)
+    if students:
+        for student in students:
+            message = format_student_message(student)
+            await update.message.reply_text(message, parse_mode="Markdown")
     else:
         await update.message.reply_text("❌ لم يتم العثور على الطالب.")
 
