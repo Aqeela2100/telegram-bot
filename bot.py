@@ -5,7 +5,7 @@ import sqlite3
 import os
 import asyncio
 
-TOKEN = "8116954770:AAHqJYnGLjoE-WFngrCQhRjHMDs-Z1zx1BE"
+TOKEN = "7974041535:AAGhCBD1rlD6N9AW4faKOeRLtj0ROIj18Xw"
 SECRET = "mysecret12345"   # يمكنك تغييره
 DB_PATH = "app.db"
 
@@ -74,3 +74,4 @@ def webhook():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     flask_app.run(host="0.0.0.0", port=port)
+
