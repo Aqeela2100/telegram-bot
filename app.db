@@ -1,0 +1,16 @@
+-- إنشاء جدول الطلاب
+CREATE TABLE students (
+    name TEXT,
+    grade TEXT,
+    paid REAL,
+    remaining REAL,
+    phone TEXT,
+    branch TEXT,
+    year INTEGER,
+    notes TEXT,
+    status TEXT
+);
+
+-- إضافة سجل اختبار
+INSERT INTO students (name, grade, paid, remaining, phone, branch, year, notes, status)
+VALUES ('Ahmed Ali', 'الصف الأول', 500, 0, '0771234567', 'الفرع الرئيسي', 2025, 'طالب نموذجي', 'نشط');
